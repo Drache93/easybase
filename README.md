@@ -1,40 +1,68 @@
-# autostate
+# easybase 🚀
 
-To install dependencies:
+> **A simple wrapper around Autobase that makes pairing and sharing easy, with configurable actions for handling custom operations**
 
-```bash
-bun install
-```
+⚠️ **Work in Progress** - This package is still under active development. APIs may change and features may be added or modified.
 
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.16. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
-
-# Easybase
-
-A simple wrapper around Autobase that makes pairing and sharing easy, with configurable actions for handling custom operations.
-
-## Features
-
-- **Simple Pairing**: Easy invite-based pairing using BlindPairing
-- **Built-in Operations**: Handle invites, writers, and basic operations out of the box
-- **Custom Actions**: Configure custom handlers for your specific use cases
-- **Default Storage**: All operations are stored in the underlying corestore by default
+---
 
 ## Installation
 
+### 1. Install via Git (Recommended for now)
+
+You can install this package directly from the Git repository:
+
 ```bash
-bun install
+bun add github:Drache93/easybase
+# or
+npm install git+https://github.com/Drache93/easybase.git
 ```
+
+- To install a specific version (tag):
+  ```bash
+  bun add github:Drache93/easybase#v1.0.0
+  # or
+  npm install git+https://github.com/Drache93/easybase.git#v1.0.0
+  ```
+
+### 2. Build Output
+
+- The `build/` directory contains compiled JavaScript and TypeScript declaration files.
+- If you are installing from Git and do **not** see a `build/` directory, run:
+  ```bash
+  bun run build && bun run build:types
+  ```
+- TypeScript users will get full type support automatically.
+
+---
+
+## Usage
+
+### TypeScript
+
+```typescript
+import { Easybase, EasybasePairer, type EasybaseOptions } from "easybase";
+```
+
+### JavaScript
+
+```js
+import { Easybase } from "easybase";
+```
+
+---
+
+## Features ✨
+
+- **Simple Pairing** 🔗: Easy invite-based pairing using BlindPairing
+- **Built-in Operations** ⚡: Handle invites, writers, and basic operations out of the box
+- **Custom Actions** 🎯: Configure custom handlers for your specific use cases
+- **Default Storage** 💾: All operations are stored in the underlying corestore by default
 
 ## Basic Usage
 
 ```typescript
-import { Easybase } from "./easybase";
+import { Easybase } from "easybase";
 
 // Create an Easybase instance
 const easybase = new Easybase(corestore, {
@@ -110,7 +138,7 @@ const pairer = Easybase.pair(corestore, invite);
 const pairedEasybase = await pairer.finished();
 ```
 
-## API Reference
+## API Reference 📚
 
 ### Constructor Options
 
@@ -146,3 +174,17 @@ interface EasybaseOptions {
 - `encryptionKey`: Get the encryption key
 - `writable`: Check if the autobase is writable
 - `base`: Access the underlying Autobase instance
+
+---
+
+## 🙏 Thanks
+
+Special thanks to the folks at [Holepunch](https://github.com/holepunchto) for their groundbreaking work on Autobase, Hyperswarm, and the peer-to-peer ecosystem! This package builds on top of their amazing tools.
+
+## 🤝 Contributing
+
+Contributions, suggestions, and feedback are very welcome! Please open an issue or pull request if you spot a problem or want to add more features.
+
+## 📜 License
+
+Apache-2.0 — see LICENSE
