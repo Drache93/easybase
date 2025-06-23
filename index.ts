@@ -2,8 +2,8 @@ import ReadyResource from "ready-resource";
 import Autobase from "autobase";
 import Hyperswarm from "hyperswarm";
 import BlindPairing, { type Member } from "blind-pairing";
-import z32 from "z32";
-import b4a from "b4a";
+import * as z32 from "z32";
+import * as b4a from "b4a";
 import { randomBytes } from "crypto";
 
 // Helper function for no-op
@@ -126,7 +126,7 @@ export class EasybasePairer extends ReadyResource {
   }
 }
 
-class Easybase extends ReadyResource {
+export class Easybase extends ReadyResource {
   private store: any;
   private swarm: Hyperswarm | null;
   public base: Autobase;
@@ -319,4 +319,4 @@ class Easybase extends ReadyResource {
   }
 }
 
-export { Easybase };
+export type { EasybaseOptions };

@@ -1,16 +1,43 @@
 {
-  "name": "autostate",
-  "main": "index.html",
+  "name": "easybase",
+  "version": "1.0.0",
+  "description": "A simple wrapper around Autobase that makes pairing and sharing easy, with configurable actions for handling custom operations",
+  "main": "build/index.js",
   "module": "build/index.js",
+  "types": "build/index.d.ts",
   "type": "module",
   "license": "Apache-2.0",
+  "files": [
+    "build",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.js",
+      "default": "./build/index.js"
+    }
+  },
   "scripts": {
     "dev": "pear run -d .",
-    "test": "brittle test/*.test.js"
+    "build": "bun build index.ts --outdir build --target node --format esm",
+    "build:types": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "bun run build && bun run build:types",
+    "test": "brittle test/*.test.js",
+    "clean": "rm -rf build"
   },
+  "keywords": [
+    "autobase",
+    "hyperswarm",
+    "p2p",
+    "distributed",
+    "database",
+    "pairing"
+  ],
   "devDependencies": {
     "@types/bun": "latest",
-    "brittle": "^3.16.3"
+    "brittle": "^3.16.3",
+    "typescript": "^5"
   },
   "peerDependencies": {
     "typescript": "^5"
