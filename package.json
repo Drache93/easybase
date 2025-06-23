@@ -1,0 +1,28 @@
+{
+  "name": "autostate",
+  "main": "index.html",
+  "module": "build/index.js",
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "pear run -d .",
+    "test": "brittle test/*.test.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "brittle": "^3.16.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "autobase": "^7.13.2",
+    "blind-pairing": "^2.3.1",
+    "corestore": "^7.4.5",
+    "holepunch-types": "github:Drache93/holepunch-types#v0.1.4",
+    "hyperswarm": "^4.11.7",
+    "ready-resource": "^1.1.2",
+    "xstate": "^5.20.0",
+    "z32": "^1.1.0"
+  }
+}
