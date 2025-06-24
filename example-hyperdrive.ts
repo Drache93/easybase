@@ -1,23 +1,32 @@
 import { Easybase } from "./index.ts";
 import Corestore from "corestore";
 
+// Define action types for better type safety
+type HyperdriveActions = {
+  uploadFile: (value: any, context: { view: any; base: any }) => Promise<void>;
+  updateMetadata: (
+    value: any,
+    context: { view: any; base: any }
+  ) => Promise<void>;
+};
+
 async function example() {
   // Create a corestore
   const store = new Corestore("./data");
 
-  // Create Easybase with Hyperdrive view
-  const easybase = new Easybase(store, {
+  // Create Easybase with Hyperdrive view and typed actions
+  const easybase = new Easybase<HyperdriveActions>(store, {
     viewType: "hyperdrive",
     actions: {
       // Custom action for handling file uploads
-      "upload-file": async (value, { view, base }) => {
+      uploadFile: async (value, { view, base }) => {
         const { filename, content } = value;
         await view.put(filename, content);
         console.log(`File ${filename} uploaded successfully`);
       },
 
       // Custom action for handling metadata
-      "update-metadata": async (value, { view, base }) => {
+      updateMetadata: async (value, { view, base }) => {
         const { key, metadata } = value;
         await view.put(`metadata/${key}`, metadata);
         console.log(`Metadata for ${key} updated`);
@@ -35,24 +44,21 @@ async function example() {
   if (drive && db && blobs) {
     console.log("Hyperdrive view is ready!");
 
-    // Example: Upload a file
-    await easybase.base.append({
-      type: "upload-file",
+    // Example: Use the dynamically created action methods
+    await easybase.uploadFile({
       filename: "example.txt",
       content: "Hello, Hyperdrive!",
     });
 
-    // Example: Update metadata
-    await easybase.base.append({
-      type: "update-metadata",
+    // Example: Update metadata using the dynamic method
+    await easybase.updateMetadata({
       key: "user-profile",
       metadata: { name: "Alice", age: 30 },
     });
 
     // Example: Add a blob
     const blobId = await blobs.put(Buffer.from("This is a blob"));
-    await easybase.base.append({
-      type: "upload-file",
+    await easybase.uploadFile({
       filename: "blob-data.bin",
       content: blobId,
     });

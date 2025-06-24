@@ -14,9 +14,28 @@ import type { Core } from "corestore";
 // Helper function for no-op
 const noop = () => {};
 
-type EasybaseOptions = EasybaseOptionsDefault | EasybaseOptionsHyperdrive;
+// Type for action function signature
+type ActionFunction<TView> = (
+  value: any,
+  context: { view: TView; base: Autobase }
+) => Promise<void>;
 
-interface EasybaseOptionsBase {
+// Type for creating action methods from action keys
+type ActionMethods<TActions> = {
+  [K in keyof TActions]: (value: any) => Promise<void>;
+};
+
+// Helper type to create Easybase with typed actions
+type EasybaseWithActions<TActions extends Record<string, ActionFunction<any>>> =
+  Easybase<TActions> & ActionMethods<TActions>;
+
+type EasybaseOptions<
+  TActions extends Record<string, ActionFunction<any>> = {}
+> = EasybaseOptionsDefault<TActions> | EasybaseOptionsHyperdrive<TActions>;
+
+interface EasybaseOptionsBase<
+  TActions extends Record<string, ActionFunction<any>> = {}
+> {
   swarm?: any;
   bootstrap?: any;
   replicate?: boolean;
@@ -24,26 +43,21 @@ interface EasybaseOptionsBase {
   encryptionKey?: any;
   invitePublicKey?: any;
   viewType?: "default" | "hyperdrive";
-  actions?: Record<
-    string,
-    (value: any, context: { view: any; base: Autobase }) => Promise<void>
-  >;
+  actions?: TActions;
 }
 
-interface EasybaseOptionsDefault extends EasybaseOptionsBase {
+interface EasybaseOptionsDefault<
+  TActions extends Record<string, ActionFunction<Core>> = {}
+> extends EasybaseOptionsBase<TActions> {
   viewType: "default";
-  actions?: Record<
-    string,
-    (value: any, context: { view: Core; base: Autobase }) => Promise<void>
-  >;
+  actions?: TActions;
 }
 
-interface EasybaseOptionsHyperdrive extends EasybaseOptionsBase {
+interface EasybaseOptionsHyperdrive<
+  TActions extends Record<string, ActionFunction<Hyperdrive>> = {}
+> extends EasybaseOptionsBase<TActions> {
   viewType: "hyperdrive";
-  actions?: Record<
-    string,
-    (value: any, context: { view: Hyperdrive; base: Autobase }) => Promise<void>
-  >;
+  actions?: TActions;
 }
 
 export class EasybasePairer extends ReadyResource {
@@ -53,9 +67,9 @@ export class EasybasePairer extends ReadyResource {
   pairing: BlindPairing | null;
   candidate: Candidate | null;
   bootstrap: string | null;
-  onresolve: ((value: Easybase) => void) | null;
+  onresolve: ((value: Easybase<any>) => void) | null;
   onreject: ((reason: Error) => void) | null;
-  easybase: Easybase | null;
+  easybase: Easybase<any> | null;
   base: Autobase | null;
   viewType: "default" | "hyperdrive";
 
@@ -157,7 +171,9 @@ export class EasybasePairer extends ReadyResource {
   }
 }
 
-export class Easybase extends ReadyResource {
+export class Easybase<
+  TActions extends Record<string, ActionFunction<any>> = {}
+> extends ReadyResource {
   private store: Corestore;
   private swarm: Hyperswarm | null;
   public base: Autobase;
@@ -168,11 +184,12 @@ export class Easybase extends ReadyResource {
   private debug: boolean;
   private invitePublicKey: any;
   private viewType: "default" | "hyperdrive";
-  private actions:
-    | EasybaseOptionsDefault["actions"]
-    | EasybaseOptionsHyperdrive["actions"];
+  private actions: TActions;
 
-  constructor(corestore: Corestore, opts: EasybaseOptions) {
+  // Index signature to allow dynamic action methods
+  [key: string]: any;
+
+  constructor(corestore: Corestore, opts: EasybaseOptions<TActions>) {
     super();
     this.store = corestore;
     this.swarm = opts.swarm || null;
@@ -183,7 +200,7 @@ export class Easybase extends ReadyResource {
     this.debug = !!opts.key;
     this.invitePublicKey = opts.invitePublicKey || null;
     this.viewType = opts.viewType || "default";
-    this.actions = opts.actions || {};
+    this.actions = (opts.actions || {}) as TActions;
 
     const { encryptionKey, key } = opts;
 
@@ -198,6 +215,15 @@ export class Easybase extends ReadyResource {
     this.base.on("update", () => {
       if (!this.base?._interrupting) this.emit("update");
     });
+
+    // Create dynamic action methods
+    if (this.actions) {
+      for (const [actionName, actionFn] of Object.entries(this.actions)) {
+        this[actionName] = async (value: any) => {
+          await this.base.append({ type: actionName, ...value });
+        };
+      }
+    }
 
     this.ready().catch(noop);
   }
@@ -288,8 +314,8 @@ export class Easybase extends ReadyResource {
           }
 
           // Check for custom actions
-          if (this.actions?.[type]) {
-            await this.actions[type](node.value, { view, base });
+          if (this.actions && type in this.actions) {
+            await (this.actions as any)[type](node.value, { view, base });
           } else {
             // Default behavior: append the value to the view
             await view.append(node.value);

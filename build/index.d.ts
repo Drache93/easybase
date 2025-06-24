@@ -1,6 +1,16 @@
 import ReadyResource from "ready-resource";
 import Autobase from "autobase";
-interface EasybaseOptions {
+import Hyperswarm from "hyperswarm";
+import BlindPairing, { type Candidate } from "blind-pairing";
+import Hyperdrive from "hyperdrive";
+import type Corestore from "corestore";
+import type { Core } from "corestore";
+type ActionFunction<TView> = (value: any, context: {
+    view: TView;
+    base: Autobase;
+}) => Promise<void>;
+type EasybaseOptions<TActions extends Record<string, ActionFunction<any>> = {}> = EasybaseOptionsDefault<TActions> | EasybaseOptionsHyperdrive<TActions>;
+interface EasybaseOptionsBase<TActions extends Record<string, ActionFunction<any>> = {}> {
     swarm?: any;
     bootstrap?: any;
     replicate?: boolean;
@@ -8,31 +18,38 @@ interface EasybaseOptions {
     encryptionKey?: any;
     invitePublicKey?: any;
     viewType?: "default" | "hyperdrive";
-    actions?: Record<string, (value: any, context: {
-        view: any;
-        base: any;
-    }) => Promise<void>>;
+    actions?: TActions;
+}
+interface EasybaseOptionsDefault<TActions extends Record<string, ActionFunction<Core>> = {}> extends EasybaseOptionsBase<TActions> {
+    viewType: "default";
+    actions?: TActions;
+}
+interface EasybaseOptionsHyperdrive<TActions extends Record<string, ActionFunction<Hyperdrive>> = {}> extends EasybaseOptionsBase<TActions> {
+    viewType: "hyperdrive";
+    actions?: TActions;
 }
 export declare class EasybasePairer extends ReadyResource {
-    store: any;
+    store: Corestore | null;
     invite: string;
-    swarm: any;
-    pairing: any;
-    candidate: any;
-    bootstrap: any;
-    onresolve: ((value: any) => void) | null;
-    onreject: ((reason: any) => void) | null;
-    easybase: Easybase | null;
-    base: any;
-    constructor(store: any, invite: string, opts?: {
-        bootstrap?: any;
+    swarm: Hyperswarm | null;
+    pairing: BlindPairing | null;
+    candidate: Candidate | null;
+    bootstrap: string | null;
+    onresolve: ((value: Easybase<any>) => void) | null;
+    onreject: ((reason: Error) => void) | null;
+    easybase: Easybase<any> | null;
+    base: Autobase | null;
+    viewType: "default" | "hyperdrive";
+    constructor(store: Corestore, invite: string, opts?: {
+        bootstrap?: string;
+        viewType?: "default" | "hyperdrive";
     });
     _open(): Promise<void>;
     _whenWritable(): void;
     _close(): Promise<void>;
     finished(): Promise<unknown>;
 }
-export declare class Easybase extends ReadyResource {
+export declare class Easybase<TActions extends Record<string, ActionFunction<any>> = {}> extends ReadyResource {
     private store;
     private swarm;
     base: Autobase;
@@ -44,9 +61,11 @@ export declare class Easybase extends ReadyResource {
     private invitePublicKey;
     private viewType;
     private actions;
-    constructor(corestore: any, opts?: EasybaseOptions);
+    [key: string]: any;
+    constructor(corestore: Corestore, opts: EasybaseOptions<TActions>);
     private _openView;
     private _createHyperdriveView;
+    private _isHyperdrive;
     private _addInvite;
     private _delInvite;
     private _apply;

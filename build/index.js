@@ -21,6 +21,7 @@ export class EasybasePairer extends ReadyResource {
     onreject;
     easybase;
     base;
+    viewType;
     constructor(store, invite, opts = {}) {
         super();
         this.store = store;
@@ -33,6 +34,7 @@ export class EasybasePairer extends ReadyResource {
         this.onreject = null;
         this.easybase = null;
         this.base = null;
+        this.viewType = opts.viewType || "default";
         this.ready().catch(noop);
     }
     async _open() {
@@ -60,13 +62,14 @@ export class EasybasePairer extends ReadyResource {
                         key: result.key,
                         encryptionKey: result.encryptionKey,
                         bootstrap: this.bootstrap,
+                        viewType: this.viewType,
                     });
                 }
                 this.swarm = null;
                 this.store = null;
                 if (this.onresolve)
                     this._whenWritable();
-                this.candidate.close().catch(noop);
+                this.candidate?.close().catch(noop);
             },
         });
     }
@@ -117,7 +120,7 @@ export class Easybase extends ReadyResource {
     invitePublicKey;
     viewType;
     actions;
-    constructor(corestore, opts = {}) {
+    constructor(corestore, opts) {
         super();
         this.store = corestore;
         this.swarm = opts.swarm || null;
@@ -128,7 +131,7 @@ export class Easybase extends ReadyResource {
         this.debug = !!opts.key;
         this.invitePublicKey = opts.invitePublicKey || null;
         this.viewType = opts.viewType || "default";
-        this.actions = opts.actions || {};
+        this.actions = (opts.actions || {});
         const { encryptionKey, key } = opts;
         this.base = new Autobase(this.store, key, {
             encrypt: true,
@@ -141,6 +144,14 @@ export class Easybase extends ReadyResource {
             if (!this.base?._interrupting)
                 this.emit("update");
         });
+        // Create dynamic action methods
+        if (this.actions) {
+            for (const [actionName, actionFn] of Object.entries(this.actions)) {
+                this[actionName] = async (value) => {
+                    await this.base.append({ type: actionName, ...value });
+                };
+            }
+        }
         this.ready().catch(noop);
     }
     _openView(store) {
@@ -169,22 +180,26 @@ export class Easybase extends ReadyResource {
         this.base.db = db;
         return drive;
     }
+    _isHyperdrive(view) {
+        return this.viewType === "hyperdrive";
+    }
     async _addInvite(view, record) {
-        if (this.viewType === "hyperdrive") {
+        if (this._isHyperdrive(view)) {
             const fileName = `invite.json`;
-            await view.put(fileName, JSON.stringify(record));
+            const buffer = Buffer.from(JSON.stringify(record));
+            await view.put(fileName, buffer);
         }
         else {
             await view.append(record);
         }
     }
     async _delInvite(view, record) {
-        if (this.viewType === "hyperdrive") {
+        if (this._isHyperdrive(view)) {
             const fileName = `invite.json`;
             await view.del(fileName);
         }
         else {
-            await view.del(record);
+            throw new Error("Cannot delete invite from default view");
         }
     }
     async _apply(nodes, view, base) {
@@ -216,7 +231,7 @@ export class Easybase extends ReadyResource {
                         continue;
                     }
                     // Check for custom actions
-                    if (this.actions[type]) {
+                    if (this.actions && type in this.actions) {
                         await this.actions[type](node.value, { view, base });
                     }
                     else {
