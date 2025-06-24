@@ -11,7 +11,7 @@ type ActionFunction<TView> = (value: any, context: {
 }) => Promise<void>;
 type EasybaseOptions<TActions extends Record<string, ActionFunction<any>> = {}> = EasybaseOptionsDefault<TActions> | EasybaseOptionsHyperdrive<TActions>;
 interface EasybaseOptionsBase<TActions extends Record<string, ActionFunction<any>> = {}> {
-    swarm?: any;
+    swarm?: Hyperswarm;
     bootstrap?: any;
     replicate?: boolean;
     key?: any;

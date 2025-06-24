@@ -35,7 +35,7 @@ type EasybaseOptions<
 interface EasybaseOptionsBase<
   TActions extends Record<string, ActionFunction<any>> = {}
 > {
-  swarm?: any;
+  swarm?: Hyperswarm;
   bootstrap?: any;
   replicate?: boolean;
   key?: any;
@@ -116,7 +116,7 @@ export class EasybasePairer extends ReadyResource {
       onadd: async (result: { key: Uint8Array; encryptionKey: Uint8Array }) => {
         if (this.easybase === null) {
           this.easybase = new Easybase(this.store!, {
-            swarm: this.swarm,
+            swarm: this.swarm!,
             key: result.key,
             encryptionKey: result.encryptionKey,
             bootstrap: this.bootstrap,
@@ -282,7 +282,7 @@ export class Easybase<
     }
   }
 
-  private async _apply(nodes: any[], view: any, base: any) {
+  private async _apply(nodes: any[], view: Core | Hyperdrive, base: Autobase) {
     for (const node of nodes) {
       const { type, record } = node.value;
 
@@ -295,36 +295,26 @@ export class Easybase<
           await this._delInvite(view, record);
           break;
         case "add-writer":
+          // @ts-expect-error Autobase.addWriter is not typed
           await base.addWriter(Buffer.from(record.key, "hex"));
           break;
         case "remove-writer":
+          // @ts-expect-error Autobase.removeWriter is not typed
           await base.removeWriter(Buffer.from(record.key, "hex"));
           break;
         default:
-          if (this.viewType === "hyperdrive" && record?.blob) {
-            // Check if the file already exists
-            const existingFile = await view.get(record.filename);
-            if (existingFile) {
-              console.log("file already exists", record.filename);
-              continue;
-            }
-            await view.put(record.filename, record.blob);
-            continue;
-          }
-
           // Check for custom actions
           if (this.actions && type in this.actions) {
             await (this.actions as any)[type](node.value, { view, base });
           } else {
-            // Default behavior: append the value to the view
-            await view.append(node.value);
+            throw new Error(`Unknown action: ${type}`);
           }
           break;
       }
     }
 
     // Flush the view if it has a flush method
-    if (view.flush) {
+    if ("flush" in view && typeof view.flush === "function") {
       await view.flush();
     }
   }
