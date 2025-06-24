@@ -7,6 +7,7 @@ interface EasybaseOptions {
     key?: any;
     encryptionKey?: any;
     invitePublicKey?: any;
+    viewType?: "default" | "hyperdrive";
     actions?: Record<string, (value: any, context: {
         view: any;
         base: any;
@@ -41,8 +42,13 @@ export declare class Easybase extends ReadyResource {
     private replicate;
     private debug;
     private invitePublicKey;
+    private viewType;
     private actions;
     constructor(corestore: any, opts?: EasybaseOptions);
+    private _openView;
+    private _createHyperdriveView;
+    private _addInvite;
+    private _delInvite;
     private _apply;
     _open(): Promise<void>;
     _close(): Promise<void>;
@@ -56,6 +62,9 @@ export declare class Easybase extends ReadyResource {
     addWriter(key: any): Promise<boolean>;
     removeWriter(key: any): Promise<void>;
     get writable(): boolean;
+    get hyperdriveView(): any;
+    get hyperbeeDb(): any;
+    get hyperblobs(): any;
     private _replicate;
 }
 export type { EasybaseOptions };

@@ -58,6 +58,7 @@ import { Easybase } from "easybase";
 - **Built-in Operations** ⚡: Handle invites, writers, and basic operations out of the box
 - **Custom Actions** 🎯: Configure custom handlers for your specific use cases
 - **Default Storage** 💾: All operations are stored in the underlying corestore by default
+- **Hyperdrive View** 🗂️: Optional Hyperdrive integration for file-based storage with Hyperbee and Hyperblobs
 
 ## Basic Usage
 
@@ -78,6 +79,75 @@ const invite = await easybase.createInvite();
 await easybase.addWriter(writerKey);
 await easybase.removeWriter(writerKey);
 ```
+
+## Hyperdrive View
+
+Easybase supports using Hyperdrive as the underlying view, providing file-based storage with Hyperbee and Hyperblobs:
+
+```typescript
+import { Easybase } from "easybase";
+
+// Create Easybase with Hyperdrive view
+const easybase = new Easybase(corestore, {
+  viewType: "hyperdrive",
+  actions: {
+    // Custom action for handling file uploads
+    "upload-file": async (value, { view, base }) => {
+      const { filename, content } = value;
+      await view.put(filename, content);
+      console.log(`File ${filename} uploaded successfully`);
+    },
+
+    // Custom action for handling metadata
+    "update-metadata": async (value, { view, base }) => {
+      const { key, metadata } = value;
+      await view.put(`metadata/${key}`, metadata);
+      console.log(`Metadata for ${key} updated`);
+    },
+  },
+});
+
+await easybase.ready();
+
+// Access Hyperdrive components
+const drive = easybase.hyperdriveView;
+const db = easybase.hyperbeeDb;
+const blobs = easybase.hyperblobs;
+
+if (drive && db && blobs) {
+  console.log("Hyperdrive view is ready!");
+
+  // Example: Upload a file
+  await easybase.base.append({
+    type: "upload-file",
+    filename: "example.txt",
+    content: "Hello, Hyperdrive!",
+  });
+
+  // Example: Add a blob
+  const blobId = await blobs.put(Buffer.from("This is a blob"));
+  await easybase.base.append({
+    type: "upload-file",
+    filename: "blob-data.bin",
+    content: blobId,
+  });
+}
+```
+
+### Hyperdrive Helper Methods
+
+When using `viewType: "hyperdrive"`, you can access the underlying components:
+
+- `hyperdriveView`: Access the Hyperdrive instance
+- `hyperbeeDb`: Access the Hyperbee database
+- `hyperblobs`: Access the Hyperblobs storage
+
+### Built-in Hyperdrive Operations
+
+When using the Hyperdrive view, the following operations are handled automatically:
+
+- `addWriter`: Adds a writer to the autobase (handles hex key conversion)
+- Blob operations: Automatically handles file existence checks and blob storage
 
 ## Custom Actions
 
@@ -150,6 +220,7 @@ interface EasybaseOptions {
   key?: any; // Autobase key
   encryptionKey?: any; // Encryption key
   invitePublicKey?: any; // Invite public key
+  viewType?: "default" | "hyperdrive"; // View type (default: "default")
   actions?: Record<
     string,
     (value: any, context: { view: any; base: any }) => Promise<void>
@@ -174,6 +245,9 @@ interface EasybaseOptions {
 - `encryptionKey`: Get the encryption key
 - `writable`: Check if the autobase is writable
 - `base`: Access the underlying Autobase instance
+- `hyperdriveView`: Access the Hyperdrive instance (when using `viewType: "hyperdrive"`)
+- `hyperbeeDb`: Access the Hyperbee database (when using `viewType: "hyperdrive"`)
+- `hyperblobs`: Access the Hyperblobs storage (when using `viewType: "hyperdrive"`)
 
 ---
 

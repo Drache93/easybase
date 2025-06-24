@@ -5,6 +5,9 @@ import BlindPairing, { type Member } from "blind-pairing";
 import * as z32 from "z32";
 import * as b4a from "b4a";
 import { randomBytes } from "crypto";
+import Hyperdrive from "hyperdrive";
+import Hyperbee from "hyperbee";
+import Hyperblobs from "hyperblobs";
 
 // Helper function for no-op
 const noop = () => {};
@@ -16,6 +19,7 @@ interface EasybaseOptions {
   key?: any;
   encryptionKey?: any;
   invitePublicKey?: any;
+  viewType?: "default" | "hyperdrive";
   actions?: Record<
     string,
     (value: any, context: { view: any; base: any }) => Promise<void>
@@ -136,6 +140,7 @@ export class Easybase extends ReadyResource {
   private replicate: boolean;
   private debug: boolean;
   private invitePublicKey: any;
+  private viewType: "default" | "hyperdrive";
   private actions: Record<
     string,
     (value: any, context: { view: any; base: any }) => Promise<void>
@@ -151,6 +156,7 @@ export class Easybase extends ReadyResource {
     this.replicate = opts.replicate !== false;
     this.debug = !!opts.key;
     this.invitePublicKey = opts.invitePublicKey || null;
+    this.viewType = opts.viewType || "default";
     this.actions = opts.actions || {};
 
     const { encryptionKey, key } = opts;
@@ -158,9 +164,7 @@ export class Easybase extends ReadyResource {
     this.base = new Autobase(this.store, key, {
       encrypt: true,
       encryptionKey,
-      open: (store: any) => {
-        return store.get("view");
-      },
+      open: this._openView.bind(this),
       // New data blocks will be added using the apply function
       apply: this._apply.bind(this),
     });
@@ -172,6 +176,56 @@ export class Easybase extends ReadyResource {
     this.ready().catch(noop);
   }
 
+  private _openView(store: any) {
+    if (this.viewType === "hyperdrive") {
+      return this._createHyperdriveView(store);
+    }
+    // Default view
+    return store.get("view");
+  }
+
+  private _createHyperdriveView(store: any) {
+    // Create underlying hypercore data structures without hyperdrive to work
+    // around readying immediately
+    const db = new Hyperbee(store.get("db"), {
+      keyEncoding: "utf-8",
+      valueEncoding: "json",
+      metadata: { contentFeed: null },
+      extension: false,
+    });
+
+    // Name for blobs doesn't need to be derived from the hyperbee key since
+    // there is a unique namespace for the viewstore
+    const blobs = new Hyperblobs(store.get("blobs"));
+
+    const drive = new Hyperdrive(store, { _db: db });
+    // @ts-ignore
+    drive.blobs = blobs;
+
+    // Store the db reference on the base for access in apply function
+    (this.base as any).db = db;
+
+    return drive;
+  }
+
+  private async _addInvite(view: any, record: any) {
+    if (this.viewType === "hyperdrive") {
+      const fileName = `invite.json`;
+      await view.put(fileName, JSON.stringify(record));
+    } else {
+      await view.append(record);
+    }
+  }
+
+  private async _delInvite(view: any, record: any) {
+    if (this.viewType === "hyperdrive") {
+      const fileName = `invite.json`;
+      await view.del(fileName);
+    } else {
+      await view.del(record);
+    }
+  }
+
   private async _apply(nodes: any[], view: any, base: any) {
     for (const node of nodes) {
       const { type, record } = node.value;
@@ -179,18 +233,29 @@ export class Easybase extends ReadyResource {
       // Handle built-in operations
       switch (type) {
         case "add-invite":
-          await view.append(record);
+          await this._addInvite(view, record);
           break;
         case "del-invite":
-          await view.del(record);
+          await this._delInvite(view, record);
           break;
         case "add-writer":
-          await base.addWriter(record.key);
+          await base.addWriter(Buffer.from(record.key, "hex"));
           break;
         case "remove-writer":
-          await base.removeWriter(record.key);
+          await base.removeWriter(Buffer.from(record.key, "hex"));
           break;
         default:
+          if (this.viewType === "hyperdrive" && record?.blob) {
+            // Check if the file already exists
+            const existingFile = await view.get(record.filename);
+            if (existingFile) {
+              console.log("file already exists", record.filename);
+              continue;
+            }
+            await view.put(record.filename, record.blob);
+            continue;
+          }
+
           // Check for custom actions
           if (this.actions[type]) {
             await this.actions[type](node.value, { view, base });
@@ -201,7 +266,11 @@ export class Easybase extends ReadyResource {
           break;
       }
     }
-    await view.flush();
+
+    // Flush the view if it has a flush method
+    if (view.flush) {
+      await view.flush();
+    }
   }
 
   override async _open() {
@@ -215,6 +284,16 @@ export class Easybase extends ReadyResource {
       await this.pairing?.close();
       await this.swarm.destroy();
     }
+
+    // Handle Hyperdrive closing errors
+    if (this.viewType === "hyperdrive" && this.base.view) {
+      try {
+        await this.base.view.close();
+      } catch (error) {
+        console.log("Error closing Hyperdrive view:", error);
+      }
+    }
+
     await this.base.close();
   }
 
@@ -260,7 +339,17 @@ export class Easybase extends ReadyResource {
 
   async deleteInvite() {
     await this.ready();
-    const existing = await this.base.view.findOne("@easybase/invite", {});
+    let existing;
+
+    if (this.viewType === "hyperdrive") {
+      const data = await (this.base.view as Hyperdrive).get("invite.json");
+      if (data) {
+        existing = JSON.parse(data.toString("utf-8"));
+      }
+    } else {
+      existing = await this.base.view.findOne("@easybase/invite", {});
+    }
+
     if (existing) {
       await this.base.append({ type: "del-invite", record: existing });
     }
@@ -287,6 +376,28 @@ export class Easybase extends ReadyResource {
 
   get writable() {
     return this.base.writable;
+  }
+
+  // Helper methods for Hyperdrive view
+  get hyperdriveView() {
+    if (this.viewType === "hyperdrive") {
+      return this.base.view;
+    }
+    return null;
+  }
+
+  get hyperbeeDb() {
+    if (this.viewType === "hyperdrive") {
+      return (this.base as any).db;
+    }
+    return null;
+  }
+
+  get hyperblobs() {
+    if (this.viewType === "hyperdrive" && this.base.view) {
+      return this.base.view.blobs;
+    }
+    return null;
   }
 
   private async _replicate() {
