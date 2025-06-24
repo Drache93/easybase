@@ -219,7 +219,7 @@ export class Easybase<
     if (this.actions) {
       for (const [actionName, actionFn] of Object.entries(this.actions)) {
         this[actionName] = async (value: any) => {
-          await this.base.append({ type: actionName, ...value });
+          await this.base.append({ type: actionName, record: value });
         };
       }
     }
@@ -305,7 +305,7 @@ export class Easybase<
         default:
           // Check for custom actions
           if (this.actions && type in this.actions) {
-            await (this.actions as any)[type](node.value, { view, base });
+            await (this.actions as any)[type](record, { view, base });
           } else {
             throw new Error(`Unknown action: ${type}`);
           }

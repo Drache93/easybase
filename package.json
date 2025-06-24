@@ -20,7 +20,7 @@
   },
   "scripts": {
     "dev": "pear run -d .",
-    "build": "bun build index.ts --outdir build --target node --format esm",
+    "build": "bun build index.ts --outdir build --packages=external",
     "build:types": "tsc -p tsconfig.build.json",
     "prepublishOnly": "bun run build && bun run build:types",
     "test": "brittle test/*.test.js",
