@@ -8,7 +8,7 @@
         "b4a": "^1.6.7",
         "blind-pairing": "^2.3.1",
         "corestore": "^7.4.5",
-        "holepunch-types": "github:Drache93/holepunch-types#v0.1.7",
+        "holepunch-types": "github:Drache93/holepunch-types#v0.1.8",
         "hyperbee": "^2.24.2",
         "hyperblobs": "^2.8.0",
         "hyperdrive": "^13.0.1",
@@ -167,7 +167,7 @@
 
     "globbie": ["globbie@1.0.3", "", { "dependencies": { "bare-fs": "^4.1.2", "bare-path": "^3.0.0", "bare-process": "^4.2.1", "picomatch": "^4.0.2" } }, "sha512-hcryJmKcftf82xfBWTWxuUITWIIoYO3ec104V17SMHGFl6VLbm1d1Ju9LX9L+jyJTwICpemX/dmPI/HGYoKr1A=="],
 
-    "holepunch-types": ["holepunch-types@github:Drache93/holepunch-types#fcfca89", {}, "Drache93-holepunch-types-fcfca89"],
+    "holepunch-types": ["holepunch-types@github:Drache93/holepunch-types#3d60b7f", {}, "Drache93-holepunch-types-3d60b7f"],
 
     "hyperbee": ["hyperbee@2.24.2", "", { "dependencies": { "b4a": "^1.6.0", "codecs": "^3.0.0", "debounceify": "^1.0.0", "hypercore-errors": "^1.0.0", "mutexify": "^1.4.0", "protocol-buffers-encodings": "^1.2.0", "rache": "^1.0.0", "ready-resource": "^1.0.0", "safety-catch": "^1.0.2", "streamx": "^2.12.4", "unslab": "^1.2.0" } }, "sha512-RAzptsdDN4oDCQ/MjWavjt720D+jRbzHvVl+YW6OwdcaLJslGpbKjbdWV1yuDiGwBs7iRwTUaFA78GtcRHZFwA=="],
 

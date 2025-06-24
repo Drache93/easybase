@@ -4,7 +4,6 @@ import Hyperswarm from "hyperswarm";
 import BlindPairing, { type Candidate, type Member } from "blind-pairing";
 import * as z32 from "z32";
 import * as b4a from "b4a";
-import { randomBytes } from "crypto";
 import Hyperdrive from "hyperdrive";
 import Hyperbee from "hyperbee";
 import Hyperblobs from "hyperblobs";
@@ -382,14 +381,12 @@ export class Easybase<
     }
 
     // Create a simple invite since BlindPairing.createInvite is not available
-    const inviteData = {
-      id: randomBytes(32),
-      invite: randomBytes(32),
-      publicKey: randomBytes(32),
-      expires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-    };
+    const { id, invite, publicKey, expires } = BlindPairing.createInvite(
+      this.base.key!
+    );
 
-    const record = inviteData;
+    const record = { id, invite, publicKey, expires };
+
     await this.base.append({ type: "add-invite", record });
     return z32.encode(record.invite);
   }
