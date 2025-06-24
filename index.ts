@@ -1,18 +1,22 @@
 import ReadyResource from "ready-resource";
 import Autobase from "autobase";
 import Hyperswarm from "hyperswarm";
-import BlindPairing, { type Member } from "blind-pairing";
+import BlindPairing, { type Candidate, type Member } from "blind-pairing";
 import * as z32 from "z32";
 import * as b4a from "b4a";
 import { randomBytes } from "crypto";
 import Hyperdrive from "hyperdrive";
 import Hyperbee from "hyperbee";
 import Hyperblobs from "hyperblobs";
+import type Corestore from "corestore";
+import type { Core } from "corestore";
 
 // Helper function for no-op
 const noop = () => {};
 
-interface EasybaseOptions {
+type EasybaseOptions = EasybaseOptionsDefault | EasybaseOptionsHyperdrive;
+
+interface EasybaseOptionsBase {
   swarm?: any;
   bootstrap?: any;
   replicate?: boolean;
@@ -22,23 +26,44 @@ interface EasybaseOptions {
   viewType?: "default" | "hyperdrive";
   actions?: Record<
     string,
-    (value: any, context: { view: any; base: any }) => Promise<void>
+    (value: any, context: { view: any; base: Autobase }) => Promise<void>
+  >;
+}
+
+interface EasybaseOptionsDefault extends EasybaseOptionsBase {
+  viewType: "default";
+  actions?: Record<
+    string,
+    (value: any, context: { view: Core; base: Autobase }) => Promise<void>
+  >;
+}
+
+interface EasybaseOptionsHyperdrive extends EasybaseOptionsBase {
+  viewType: "hyperdrive";
+  actions?: Record<
+    string,
+    (value: any, context: { view: Hyperdrive; base: Autobase }) => Promise<void>
   >;
 }
 
 export class EasybasePairer extends ReadyResource {
-  store: any;
+  store: Corestore | null;
   invite: string;
-  swarm: any;
-  pairing: any;
-  candidate: any;
-  bootstrap: any;
-  onresolve: ((value: any) => void) | null;
-  onreject: ((reason: any) => void) | null;
+  swarm: Hyperswarm | null;
+  pairing: BlindPairing | null;
+  candidate: Candidate | null;
+  bootstrap: string | null;
+  onresolve: ((value: Easybase) => void) | null;
+  onreject: ((reason: Error) => void) | null;
   easybase: Easybase | null;
-  base: any;
+  base: Autobase | null;
+  viewType: "default" | "hyperdrive";
 
-  constructor(store: any, invite: string, opts: { bootstrap?: any } = {}) {
+  constructor(
+    store: Corestore,
+    invite: string,
+    opts: { bootstrap?: string; viewType?: "default" | "hyperdrive" } = {}
+  ) {
     super();
     this.store = store;
     this.invite = invite;
@@ -50,24 +75,25 @@ export class EasybasePairer extends ReadyResource {
     this.onreject = null;
     this.easybase = null;
     this.base = null;
+    this.viewType = opts.viewType || "default";
 
     this.ready().catch(noop);
   }
 
   override async _open() {
-    await this.store.ready();
+    await this.store!.ready();
     this.swarm = new Hyperswarm({
-      keyPair: await this.store.createKeyPair("hyperswarm"),
+      keyPair: await this.store!.createKeyPair("hyperswarm"),
       bootstrap: this.bootstrap,
     });
 
     const store = this.store;
     this.swarm.on("connection", (connection: any, peerInfo: any) => {
-      store.replicate(connection);
+      store!.replicate(connection);
     });
 
     this.pairing = new BlindPairing(this.swarm);
-    const core = Autobase.getLocalCore(this.store);
+    const core = Autobase.getLocalCore(this.store!);
     await core.ready();
     const key = core.key;
     await core.close();
@@ -76,17 +102,18 @@ export class EasybasePairer extends ReadyResource {
       userData: key,
       onadd: async (result: { key: Uint8Array; encryptionKey: Uint8Array }) => {
         if (this.easybase === null) {
-          this.easybase = new Easybase(this.store, {
+          this.easybase = new Easybase(this.store!, {
             swarm: this.swarm,
             key: result.key,
             encryptionKey: result.encryptionKey,
             bootstrap: this.bootstrap,
+            viewType: this.viewType,
           });
         }
         this.swarm = null;
         this.store = null;
         if (this.onresolve) this._whenWritable();
-        this.candidate.close().catch(noop);
+        this.candidate?.close().catch(noop);
       },
     });
   }
@@ -131,7 +158,7 @@ export class EasybasePairer extends ReadyResource {
 }
 
 export class Easybase extends ReadyResource {
-  private store: any;
+  private store: Corestore;
   private swarm: Hyperswarm | null;
   public base: Autobase;
   private bootstrap: string;
@@ -141,12 +168,11 @@ export class Easybase extends ReadyResource {
   private debug: boolean;
   private invitePublicKey: any;
   private viewType: "default" | "hyperdrive";
-  private actions: Record<
-    string,
-    (value: any, context: { view: any; base: any }) => Promise<void>
-  >;
+  private actions:
+    | EasybaseOptionsDefault["actions"]
+    | EasybaseOptionsHyperdrive["actions"];
 
-  constructor(corestore: any, opts: EasybaseOptions = {}) {
+  constructor(corestore: Corestore, opts: EasybaseOptions) {
     super();
     this.store = corestore;
     this.swarm = opts.swarm || null;
@@ -176,7 +202,7 @@ export class Easybase extends ReadyResource {
     this.ready().catch(noop);
   }
 
-  private _openView(store: any) {
+  private _openView(store: Corestore) {
     if (this.viewType === "hyperdrive") {
       return this._createHyperdriveView(store);
     }
@@ -184,7 +210,7 @@ export class Easybase extends ReadyResource {
     return store.get("view");
   }
 
-  private _createHyperdriveView(store: any) {
+  private _createHyperdriveView(store: Corestore) {
     // Create underlying hypercore data structures without hyperdrive to work
     // around readying immediately
     const db = new Hyperbee(store.get("db"), {
@@ -208,21 +234,26 @@ export class Easybase extends ReadyResource {
     return drive;
   }
 
-  private async _addInvite(view: any, record: any) {
-    if (this.viewType === "hyperdrive") {
+  private _isHyperdrive(view: Core | Hyperdrive): view is Hyperdrive {
+    return this.viewType === "hyperdrive";
+  }
+
+  private async _addInvite(view: Core | Hyperdrive, record: any) {
+    if (this._isHyperdrive(view)) {
       const fileName = `invite.json`;
-      await view.put(fileName, JSON.stringify(record));
+      const buffer = Buffer.from(JSON.stringify(record));
+      await view.put(fileName, buffer);
     } else {
       await view.append(record);
     }
   }
 
-  private async _delInvite(view: any, record: any) {
-    if (this.viewType === "hyperdrive") {
+  private async _delInvite(view: Core | Hyperdrive, record: any) {
+    if (this._isHyperdrive(view)) {
       const fileName = `invite.json`;
       await view.del(fileName);
     } else {
-      await view.del(record);
+      throw new Error("Cannot delete invite from default view");
     }
   }
 
@@ -257,7 +288,7 @@ export class Easybase extends ReadyResource {
           }
 
           // Check for custom actions
-          if (this.actions[type]) {
+          if (this.actions?.[type]) {
             await this.actions[type](node.value, { view, base });
           } else {
             // Default behavior: append the value to the view

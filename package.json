@@ -47,7 +47,7 @@
     "b4a": "^1.6.7",
     "blind-pairing": "^2.3.1",
     "corestore": "^7.4.5",
-    "holepunch-types": "github:Drache93/holepunch-types#v0.1.5",
+    "holepunch-types": "github:Drache93/holepunch-types#v0.1.7",
     "hyperbee": "^2.24.2",
     "hyperblobs": "^2.8.0",
     "hyperdrive": "^13.0.1",
