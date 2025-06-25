@@ -214,9 +214,21 @@ bun install
 bun add github:Drache93/holepunch-types#v0.1.9
 ```
 
-### 5. You now have full TypeScript support! 🎉
+### 5. Configure TypeScript
 
-### 6. Example: Build a P2P chat app
+Create or update your `tsconfig.json` to include the type definitions:
+
+```json
+{
+  "compilerOptions": {
+    "typeRoots": ["./node_modules/@types", "./node_modules/holepunch-types"]
+  }
+}
+```
+
+### 6. You now have full TypeScript support! 🎉
+
+### 7. Example: Build a P2P chat app
 
 Install some of the supported libraries and start building:
 
@@ -226,10 +238,30 @@ bun add hyperswarm hyperbee
 
 ```typescript
 // index.ts
-console.log("Hello world");
+import Hyperswarm from "hyperswarm";
+import Hyperbee from "hyperbee";
+import * as b4a from "b4a";
+
+// Full TypeScript support with autocomplete!
+const swarm = new Hyperswarm({
+  keyPair: crypto.keyPair(), // Properly typed
+  maxPeers: 10,
+});
+
+const bee = new Hyperbee(core, {
+  keyEncoding: "utf-8",
+  valueEncoding: "utf-8",
+});
+
+swarm.on("connection", (connection, peerInfo) => {
+  // Both connection and peerInfo are fully typed
+  console.log("Connected to peer:", b4a.toString(peerInfo.publicKey, "hex"));
+});
+
+await swarm.join(b4a.from("chat-room", "utf-8"));
 ```
 
-### 7. Build and run your app
+### 8. Build and run your app
 
 Build your TypeScript project:
 
@@ -243,7 +275,7 @@ Then run it like a normal(TM) Pear app!:
 pear run -d .
 ```
 
-### 8. Easy development workflow
+### 9. Easy development workflow
 
 Update your `package.json` dev script for easy development:
 
