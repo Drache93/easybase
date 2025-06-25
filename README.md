@@ -57,6 +57,7 @@ import { Easybase } from "easybase";
 - **Simple Pairing** 🔗: Easy invite-based pairing using BlindPairing
 - **Built-in Operations** ⚡: Handle invites, writers, and basic operations out of the box
 - **Custom Actions** 🎯: Configure custom handlers for your specific use cases
+- **Dynamic Action Methods** 🚀: Actions are automatically exposed as TypeScript-safe methods on the instance
 - **Default Storage** 💾: All operations are stored in the underlying corestore by default
 - **Hyperdrive View** 🗂️: Optional Hyperdrive integration for file-based storage with Hyperbee and Hyperblobs
 
@@ -80,6 +81,61 @@ await easybase.addWriter(writerKey);
 await easybase.removeWriter(writerKey);
 ```
 
+## Dynamic Action Methods 🚀
+
+Easybase automatically exposes your custom actions as methods on the instance, providing full TypeScript support:
+
+```typescript
+import { Easybase } from "easybase";
+
+// Define action types for better type safety
+type MyActions = {
+  uploadFile: (value: any, context: { view: any; base: any }) => Promise<void>;
+  updateMetadata: (
+    value: any,
+    context: { view: any; base: any }
+  ) => Promise<void>;
+};
+
+// Create Easybase with typed actions
+const easybase = new Easybase<MyActions>(corestore, {
+  viewType: "hyperdrive",
+  actions: {
+    uploadFile: async (value, { view, base }) => {
+      const { filename, content } = value;
+      await view.put(filename, content);
+      console.log(`File ${filename} uploaded successfully`);
+    },
+
+    updateMetadata: async (value, { view, base }) => {
+      const { key, metadata } = value;
+      await view.put(`metadata/${key}`, metadata);
+      console.log(`Metadata for ${key} updated`);
+    },
+  },
+});
+
+await easybase.ready();
+
+// Actions are now available as methods with full TypeScript support!
+await easybase.uploadFile({
+  filename: "example.txt",
+  content: "Hello, World!",
+});
+
+await easybase.updateMetadata({
+  key: "user-profile",
+  metadata: { name: "Alice", age: 30 },
+});
+```
+
+### TypeScript Benefits
+
+- **Autocomplete**: TypeScript will suggest your custom action methods
+- **Type Safety**: Full type checking for action parameters and return values
+- **IntelliSense**: Hover over methods to see their signatures
+- **Compile-time Errors**: Catch typos and type mismatches early
+
 ## Hyperdrive View
 
 Easybase supports using Hyperdrive as the underlying view, providing file-based storage with Hyperbee and Hyperblobs:
@@ -87,19 +143,17 @@ Easybase supports using Hyperdrive as the underlying view, providing file-based 
 ```typescript
 import { Easybase } from "easybase";
 
-// Create Easybase with Hyperdrive view
+// Create Easybase with Hyperdrive view and dynamic actions
 const easybase = new Easybase(corestore, {
   viewType: "hyperdrive",
   actions: {
-    // Custom action for handling file uploads
-    "upload-file": async (value, { view, base }) => {
+    uploadFile: async (value, { view, base }) => {
       const { filename, content } = value;
       await view.put(filename, content);
       console.log(`File ${filename} uploaded successfully`);
     },
 
-    // Custom action for handling metadata
-    "update-metadata": async (value, { view, base }) => {
+    updateMetadata: async (value, { view, base }) => {
       const { key, metadata } = value;
       await view.put(`metadata/${key}`, metadata);
       console.log(`Metadata for ${key} updated`);
@@ -117,68 +171,115 @@ const blobs = easybase.hyperblobs;
 if (drive && db && blobs) {
   console.log("Hyperdrive view is ready!");
 
-  // Example: Upload a file
-  await easybase.base.append({
-    type: "upload-file",
+  // Use dynamic action methods
+  await easybase.uploadFile({
     filename: "example.txt",
     content: "Hello, Hyperdrive!",
   });
 
   // Example: Add a blob
   const blobId = await blobs.put(Buffer.from("This is a blob"));
-  await easybase.base.append({
-    type: "upload-file",
+  await easybase.uploadFile({
     filename: "blob-data.bin",
     content: blobId,
   });
 }
 ```
 
-### Hyperdrive Helper Methods
+## 🍐 Using with Pear
 
-When using `viewType: "hyperdrive"`, you can access the underlying components:
+Get started quickly with TypeScript support in your Pear project:
 
-- `hyperdriveView`: Access the Hyperdrive instance
-- `hyperbeeDb`: Access the Hyperbee database
-- `hyperblobs`: Access the Hyperblobs storage
+### 1. Initialize a new Pear project
 
-### Built-in Hyperdrive Operations
+```bash
+pear init --yes --type terminal
+```
 
-When using the Hyperdrive view, the following operations are handled automatically:
+### 2. Convert to TypeScript
 
-- `addWriter`: Adds a writer to the autobase (handles hex key conversion)
-- Blob operations: Automatically handles file existence checks and blob storage
+```bash
+mv index.js index.ts
+```
+
+### 3. Install dependencies
+
+```bash
+bun install
+```
+
+### 4. Add type definitions
+
+```bash
+bun add github:Drache93/holepunch-types#v0.1.9
+```
+
+### 5. You now have full TypeScript support! 🎉
+
+### 6. Example: Build a P2P chat app
+
+Install some of the supported libraries and start building:
+
+```bash
+bun add hyperswarm hyperbee
+```
+
+```typescript
+// index.ts
+console.log("Hello world");
+```
+
+### 7. Build and run your app
+
+Build your TypeScript project:
+
+```bash
+bun build index.ts --outdir . --packages=external
+```
+
+Then run it like a normal(TM) Pear app!:
+
+```bash
+pear run -d .
+```
+
+### 8. Easy development workflow
+
+Update your `package.json` dev script for easy development:
+
+```json
+{
+  "scripts": {
+    "dev": "bun build index.ts --outdir . --packages=external && pear run -d ."
+  }
+}
+```
+
+Then simply run:
+
+```bash
+bun run dev
+```
 
 ## Custom Actions
 
-You can configure custom actions to handle specific operation types:
+You can configure custom actions to handle specific operation types. These actions are automatically exposed as methods on the Easybase instance:
 
 ```typescript
-const customActions = {
-  "user-message": async (value, context) => {
-    const { message, userId, timestamp } = value;
-    await context.view.append({
-      type: "message",
-      data: { message, userId, timestamp },
-    });
-  },
-
-  "file-upload": async (value, context) => {
-    const { fileName, fileHash, userId } = value;
-    await context.view.append({
-      type: "file",
-      data: { fileName, fileHash, userId },
-    });
-  },
-};
-
 const easybase = new Easybase(corestore, {
-  actions: customActions,
+  actions: {
+    sendMessage: async (value, { view, base }) => {
+      const { message, userId, timestamp } = value;
+      await view.append({
+        type: "message",
+        data: { message, userId, timestamp },
+      });
+    },
+  },
 });
 
-// Use custom operations
-await easybase.base.append({
-  type: "user-message",
+// Use the dynamic methods
+await easybase.sendMessage({
   message: "Hello!",
   userId: "user123",
   timestamp: Date.now(),
@@ -213,7 +314,7 @@ const pairedEasybase = await pairer.finished();
 ### Constructor Options
 
 ```typescript
-interface EasybaseOptions {
+interface EasybaseOptions<TActions = {}> {
   swarm?: any; // Hyperswarm instance
   bootstrap?: any; // Bootstrap servers
   replicate?: boolean; // Enable replication (default: true)
@@ -221,10 +322,7 @@ interface EasybaseOptions {
   encryptionKey?: any; // Encryption key
   invitePublicKey?: any; // Invite public key
   viewType?: "default" | "hyperdrive"; // View type (default: "default")
-  actions?: Record<
-    string,
-    (value: any, context: { view: any; base: any }) => Promise<void>
-  >;
+  actions?: TActions; // Custom actions (automatically exposed as methods)
 }
 ```
 
@@ -236,6 +334,7 @@ interface EasybaseOptions {
 - `removeWriter(key)`: Remove a writer from the autobase
 - `ready()`: Wait for the instance to be ready
 - `close()`: Close the instance
+- **Dynamic Action Methods**: Your custom actions are automatically available as methods
 
 ### Properties
 
@@ -248,6 +347,21 @@ interface EasybaseOptions {
 - `hyperdriveView`: Access the Hyperdrive instance (when using `viewType: "hyperdrive"`)
 - `hyperbeeDb`: Access the Hyperbee database (when using `viewType: "hyperdrive"`)
 - `hyperblobs`: Access the Hyperblobs storage (when using `viewType: "hyperdrive"`)
+
+### TypeScript Types
+
+```typescript
+// Action function signature
+type ActionFunction<TView> = (
+  value: any,
+  context: { view: TView; base: Autobase }
+) => Promise<void>;
+
+// Helper type for Easybase with typed actions
+type EasybaseWithActions<TActions> = Easybase<TActions> & {
+  [K in keyof TActions]: (value: any) => Promise<void>;
+};
+```
 
 ---
 
