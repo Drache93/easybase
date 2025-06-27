@@ -1,6 +1,6 @@
 {
   "name": "easybase",
-  "version": "1.0.0",
+  "version": "0.2.4",
   "description": "A simple wrapper around Autobase that makes pairing and sharing easy, with configurable actions for handling custom operations",
   "main": "build/index.js",
   "module": "build/index.js",
@@ -43,11 +43,11 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "autobase": "^7.13.2",
+    "autobase": "^7.13.3",
     "b4a": "^1.6.7",
     "blind-pairing": "^2.3.1",
     "corestore": "^7.4.5",
-    "holepunch-types": "github:Drache93/holepunch-types#v0.1.8",
+    "holepunch-types": "github:Drache93/holepunch-types#v0.1.10",
     "hyperbee": "^2.24.2",
     "hyperblobs": "^2.8.0",
     "hyperdrive": "^13.0.1",

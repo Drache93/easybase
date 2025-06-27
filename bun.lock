@@ -4,11 +4,11 @@
     "": {
       "name": "autostate",
       "dependencies": {
-        "autobase": "^7.13.2",
+        "autobase": "^7.13.3",
         "b4a": "^1.6.7",
         "blind-pairing": "^2.3.1",
         "corestore": "^7.4.5",
-        "holepunch-types": "github:Drache93/holepunch-types#v0.1.8",
+        "holepunch-types": "github:Drache93/holepunch-types#v0.1.10",
         "hyperbee": "^2.24.2",
         "hyperblobs": "^2.8.0",
         "hyperdrive": "^13.0.1",
@@ -43,7 +43,7 @@
 
     "assert": ["bare-assert@1.0.2", "", {}, "sha512-7AGTrUCz7OOWnMOp4hWnksAkFeZlvW7WMwvKQBANVJIOtjWa6RLSPyUN+zs3QBufRZwIYhYB3UpkAlDbBPp2/Q=="],
 
-    "autobase": ["autobase@7.13.2", "", { "dependencies": { "b4a": "^1.6.1", "bare-events": "^2.2.0", "compact-encoding": "^2.16.0", "core-coupler": "^2.0.0", "debounceify": "^1.0.0", "hyperbee": "^2.22.0", "hypercore": "^11.4.0", "hypercore-crypto": "^3.4.0", "hypercore-id-encoding": "^1.2.0", "hyperschema": "^1.12.1", "index-encoder": "^3.3.2", "mutexify": "^1.4.0", "nanoassert": "^2.0.0", "protomux-wakeup": "^2.0.0", "ready-resource": "^1.0.0", "resolve-reject-promise": "^1.1.0", "safety-catch": "^1.0.2", "signal-promise": "^1.0.3", "sodium-universal": "^5.0.1", "sub-encoder": "^2.1.1", "tiny-buffer-map": "^1.1.1" } }, "sha512-qHhlQHscXXtPns4l23oaHHC+5EtuiOTYhasLpN4uwLRfXg94WSpu3rgAsdSA69qnF3YjgUKtATXSjB/ABRzxqg=="],
+    "autobase": ["autobase@7.13.3", "", { "dependencies": { "b4a": "^1.6.1", "bare-events": "^2.2.0", "compact-encoding": "^2.16.0", "core-coupler": "^2.0.0", "debounceify": "^1.0.0", "hyperbee": "^2.22.0", "hypercore": "^11.4.0", "hypercore-crypto": "^3.4.0", "hypercore-id-encoding": "^1.2.0", "hyperschema": "^1.12.1", "index-encoder": "^3.3.2", "mutexify": "^1.4.0", "nanoassert": "^2.0.0", "protomux-wakeup": "^2.0.0", "ready-resource": "^1.0.0", "resolve-reject-promise": "^1.1.0", "safety-catch": "^1.0.2", "signal-promise": "^1.0.3", "sodium-universal": "^5.0.1", "sub-encoder": "^2.1.1", "tiny-buffer-map": "^1.1.1" } }, "sha512-2I8kNGMozYuUwHfHnRx9JyAtaKDtotUyX3N20yrWrb+5tm7uWaSGItBGF4WB0QyDrd/EyiD6fBByiNqQYXAe6g=="],
 
     "b4a": ["b4a@1.6.7", "", {}, "sha512-OnAYlL5b7LEkALw87fUVafQw5rVR9RjwGd4KUwNQ6DrrNmaVaUCgLipfVlzrPQ4tWOR9P0IXGNOx50jYCCdSJg=="],
 
@@ -167,7 +167,7 @@
 
     "globbie": ["globbie@1.0.3", "", { "dependencies": { "bare-fs": "^4.1.2", "bare-path": "^3.0.0", "bare-process": "^4.2.1", "picomatch": "^4.0.2" } }, "sha512-hcryJmKcftf82xfBWTWxuUITWIIoYO3ec104V17SMHGFl6VLbm1d1Ju9LX9L+jyJTwICpemX/dmPI/HGYoKr1A=="],
 
-    "holepunch-types": ["holepunch-types@github:Drache93/holepunch-types#3d60b7f", {}, "Drache93-holepunch-types-3d60b7f"],
+    "holepunch-types": ["holepunch-types@github:Drache93/holepunch-types#fa40e63", {}, "Drache93-holepunch-types-fa40e63"],
 
     "hyperbee": ["hyperbee@2.24.2", "", { "dependencies": { "b4a": "^1.6.0", "codecs": "^3.0.0", "debounceify": "^1.0.0", "hypercore-errors": "^1.0.0", "mutexify": "^1.4.0", "protocol-buffers-encodings": "^1.2.0", "rache": "^1.0.0", "ready-resource": "^1.0.0", "safety-catch": "^1.0.2", "streamx": "^2.12.4", "unslab": "^1.2.0" } }, "sha512-RAzptsdDN4oDCQ/MjWavjt720D+jRbzHvVl+YW6OwdcaLJslGpbKjbdWV1yuDiGwBs7iRwTUaFA78GtcRHZFwA=="],
 
