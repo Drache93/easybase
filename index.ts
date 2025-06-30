@@ -692,9 +692,6 @@ export class Easybase<
     // Properly type the blobs assignment
     (drive as any).blobs = blobs;
 
-    // Store the db reference on the base for access in apply function
-    (this.base as any).db = db;
-
     debugLog(this.debug, "Easybase", "Hyperdrive view created");
     return drive;
   }

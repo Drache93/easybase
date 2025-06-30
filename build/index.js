@@ -456,8 +456,6 @@ export class Easybase extends ReadyResource {
         const drive = new Hyperdrive(store, { _db: db });
         // Properly type the blobs assignment
         drive.blobs = blobs;
-        // Store the db reference on the base for access in apply function
-        this.base.db = db;
         debugLog(this.debug, "Easybase", "Hyperdrive view created");
         return drive;
     }
