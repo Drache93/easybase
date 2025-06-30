@@ -764,13 +764,6 @@ export class Easybase<
         record,
       });
 
-      if (!type || typeof type !== "string") {
-        debugLog(this.debug, "Easybase", "ERROR: Invalid action type", {
-          type,
-        });
-        throw new EasybaseError("Invalid action type", "INVALID_ACTION");
-      }
-
       // Handle built-in operations
       switch (type) {
         case "add-invite":
@@ -819,7 +812,7 @@ export class Easybase<
           break;
         default:
           const action =
-            this.actions && type in this.actions
+            this.actions && type && type in this.actions
               ? this.actions[type]
               : this.actions.default;
 
