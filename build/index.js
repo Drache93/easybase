@@ -561,11 +561,6 @@ export class Easybase extends ReadyResource {
                     break;
             }
         }
-        // Flush the view if it has a flush method
-        if ("flush" in view && typeof view.flush === "function") {
-            debugLog(this.debug, "Easybase", "Flushing view");
-            await view.flush();
-        }
         debugLog(this.debug, "Easybase", "_apply() completed");
     }
     async _open() {
