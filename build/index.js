@@ -547,13 +547,16 @@ export class Easybase extends ReadyResource {
                     debugLog(this.debug, "Easybase", "Writer removed successfully");
                     break;
                 default:
+                    const action = this.actions && type in this.actions
+                        ? this.actions[type]
+                        : this.actions.default;
                     // Check for custom actions
-                    if (this.actions && type in this.actions) {
-                        debugLog(this.debug, "Easybase", "Processing custom action", {
+                    if (action) {
+                        debugLog(this.debug, "Easybase", "Processing action", {
                             type,
                         });
-                        await this.actions[type](record, { view, base });
-                        debugLog(this.debug, "Easybase", "Custom action completed", {
+                        await action(record, { view, base });
+                        debugLog(this.debug, "Easybase", "Action completed", {
                             type,
                         });
                     }
